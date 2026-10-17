@@ -1,0 +1,31 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/shiro_demo?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:shiro}
+    password: ${SPRING_DATASOURCE_PASSWORD:shiro}
+  thymeleaf:
+    cache: true
+  redis:
+    database: ${SPRING_REDIS_DATABASE:0}
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    password: ${SPRING_REDIS_PASSWORD:}
+    timeout: 2000
+    jedis:
+      pool:
+        min-idle: 0
+        max-idle: 8
+        max-active: 16
+        max-wait: 2000
+
+logging:
+  level:
+    com.springboot.demo: INFO
+
+mybatis-plus:
+  typeAliasesPackage: com.springboot.demo.sys.entity
+  mapper-locations: classpath:mapper/*.xml

@@ -1,0 +1,55 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/shiro_demo?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8&serverTimezone=UTC}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-shiro}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-shiro}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: shiro_demo
+      MYSQL_USER: ${MYSQL_USER:-shiro}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-shiro}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/db/schema-mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./src/main/resources/db/data-mysql.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["sh", "-c", "if [ -n \"$$REDIS_PASSWORD\" ]; then exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\"; else exec redis-server --appendonly yes; fi"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG; else redis-cli ping | grep -q PONG; fi"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:
+  redis-data:
